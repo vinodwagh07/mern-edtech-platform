@@ -142,9 +142,10 @@ const signup = async (req, res) => {
   }
 };
 
+// Controller: Handles user login, JWT generation, and secure cookie setup
 const login = async (req, res) => {
   try {
-    //Extract and validate request body
+    //Extract and validate user input
     const { email, password } = req.body;
     if (!email || !password) {
       return res
@@ -152,7 +153,7 @@ const login = async (req, res) => {
         .json({ message: "Email and password are required" });
     }
 
-    //Check if user exists
+    //Check if user exists in DB
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -179,12 +180,13 @@ const login = async (req, res) => {
     user.token = token;
     user.password = undefined;
 
-    //Set cookie
+    //Configure secure cookie options
     const options = {
       expires: new Date(Date.now() + ms(process.env.COOKIE_EXPIRY)),
-      httpOnly: true,
+      httpOnly: true, // prevents XSS — cookie can’t be accessed via JS
     };
-    
+
+    //Send response with cookie + token
     res.cookie("token", token, options).status(200).json({
       success: true,
       token,
@@ -199,3 +201,5 @@ const login = async (req, res) => {
     });
   }
 };
+
+module.exports = { sendOtp, signup, login };
