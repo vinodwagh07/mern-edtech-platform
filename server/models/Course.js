@@ -9,6 +9,7 @@ const CourseSchema = new mongoose.Schema({
   courseDescription: {
     type: String,
     trim: true,
+    default: "",
   },
   instructor: {
     type: mongoose.Schema.Types.ObjectId,
@@ -17,19 +18,16 @@ const CourseSchema = new mongoose.Schema({
   },
   whatYouWillLearn: {
     type: String,
+    default: "",
   },
-  courseContent: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Section",
-    },
-  ],
-  ratingsAndReviews: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "RatingAndReview",
-    },
-  ],
+  courseContent: {
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Section" }],
+    default: [],
+  },
+  ratingsAndReviews: {
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: "RatingAndReview" }],
+    default: [],
+  },
   price: {
     type: Number,
     required: true,
@@ -37,17 +35,19 @@ const CourseSchema = new mongoose.Schema({
   thumbnail: {
     type: String,
   },
-  tag: {
+  category: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Tag",
+    ref: "Category",
+    required: true,
   },
-  studentsEnrolled: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-  ],
+  tags: {
+    type: [String],
+    default: [],
+  },
+  studentsEnrolled: {
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    default: [],
+  },
 });
 
 module.exports = mongoose.model("Course", CourseSchema);
