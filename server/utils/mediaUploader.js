@@ -1,6 +1,6 @@
 const cloudinary = require("../config/cloudinary");
 
-const uploadImageToCloudinary = async (file, folder, options = {}) => {
+const uploadToCloudinary = async (file, folder, options = {}) => {
     
   if (!file) throw new Error("No file provided for upload");
   if (!folder) folder = "default";
@@ -20,4 +20,4 @@ const uploadImageToCloudinary = async (file, folder, options = {}) => {
   }
 };
 
-module.exports = { uploadImageToCloudinary };
+module.exports = { uploadToCloudinary };
