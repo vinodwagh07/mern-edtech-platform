@@ -8,20 +8,22 @@ const mailSender = async (email, title, body) => {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS,
       },
+      tls: {
+        rejectUnauthorized: false, 
+      },
+      secure: false, 
     });
 
     let info = await transporter.sendMail({
-      from: "StudyNotion || CodeHelp - By Vinod Wagh",
+      from: `"StudyNotion" <${process.env.MAIL_USER}>`,
       to: `${email}`,
       subject: `${title}`,
       html: `${body}`,
     });
-    
-    console.log(info);
     return info;
-
   } catch (error) {
-    console.log(error.message);
+    console.error("Mail sending error:", error.message);
+    throw new Error("Failed to send email");
   }
 };
 
