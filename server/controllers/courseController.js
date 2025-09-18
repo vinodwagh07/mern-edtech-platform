@@ -3,7 +3,7 @@ const Course = require("../models/Course");
 const Category = require("../models/Category");
 const { uploadToCloudinary } = require("../utils/mediaUploader");
 
-// Controller: Handles new course creation 
+// Controller: Handles new course creation
 const createCourse = async (req, res) => {
   try {
     const {
@@ -110,7 +110,7 @@ const createCourse = async (req, res) => {
   }
 };
 
-// Controller: Handles fetching all courses  
+// Controller: Handles fetching all courses
 const getAllCourses = async (req, res) => {
   try {
     const allCourses = await Course.find()
@@ -133,4 +133,55 @@ const getAllCourses = async (req, res) => {
   }
 };
 
-module.exports = { createCourse, getAllCourses };
+//Controller : Get all details of a single course
+const getCourseDetails = async (req, res) => {
+  try {
+    const { courseId } = req.body;
+    if (!courseId) {
+      return res.status(400).json({
+        success: false,
+        message: "courseId is required",
+      });
+    }
+
+    // Find course and populate sections and subSections
+    const courseDetails = await Course.findById(courseId)
+      .populate({
+        path: "instructor",
+        populate: {
+          path: "additionalDetails",
+        },
+      })
+      .populate({
+        path: "courseContent",
+        populate: {
+          path: "subSection",
+        },
+      })
+      .populate("category")
+      .populate("ratingsAndReviews")
+      .populate("studentsEnrolled")
+      .lean(); // makes the object plain JS for faster read-only operations
+
+    if (!courseDetails) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Course details fetched successfully",
+      data: courseDetails,
+    });
+  } catch (error) {
+    console.error("Error fetching course details:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+module.exports = { createCourse, getAllCourses, getCourseDetails };
