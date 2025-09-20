@@ -68,6 +68,8 @@ const getAllCategories = async (req, res) => {
   }
 };
 
+
+//Controller: Fetch all details for category page
 const categoryPageDetails = async (req, res) => {
   try {
     const { categoryId } = req.body;
