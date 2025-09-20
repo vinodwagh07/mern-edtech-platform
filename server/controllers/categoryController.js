@@ -1,4 +1,5 @@
 const Category = require("../models/Category");
+const Course = require("../models/Course");
 
 // Controller : Create a new category in the database
 const createCategory = async (req, res) => {
@@ -48,9 +49,8 @@ const createCategory = async (req, res) => {
 // Controller: Fetch all categories from the database
 const getAllCategories = async (req, res) => {
   try {
-    
     const categories = await Category.find({}, { name: 1, description: 1 });
-    
+
     res.status(200).json({
       success: true,
       data: categories,
@@ -68,4 +68,63 @@ const getAllCategories = async (req, res) => {
   }
 };
 
-module.exports = { createCategory, getAllCategories };
+
+//Controller: Fetch all details for category page
+const categoryPageDetails = async (req, res) => {
+  try {
+    const { categoryId } = req.body;
+
+    //Validate categoryId
+    if (!categoryId) {
+      return res.status(400).json({ success: false, message: "categoryId is required" });
+    }
+    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+      return res.status(400).json({ success: false, message: "Invalid categoryId format" });
+    }
+
+    //Fetch current category
+    const currentCategory = await Category.findById(categoryId)
+      .populate("courses", "courseName instructor") // only needed fields
+      .lean();
+
+    if (!currentCategory) {
+      return res.status(404).json({ success: false, message: "Category not found" });
+    }
+
+    //Fetch other categories
+    const otherCategories = await Category.find({ _id: { $ne: categoryId } })
+      .populate("courses", "courseName instructor")
+      .lean();
+
+    //Fetch top courses
+    const topCourses = await Course.aggregate([
+      {
+        $project: {
+          courseName: 1,
+          instructor: 1,
+          studentsCount: { $size: { $ifNull: ["$studentsEnrolled", []] } },
+        },
+      },
+      { $sort: { studentsCount: -1 } },
+      { $limit: 10 },
+    ]);
+
+
+    return res.status(200).json({
+      success: true,
+      message: "Category page details fetched successfully",
+      data: {
+        currentCategory,
+        otherCategories,
+        topCourses,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching category page details:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+module.exports = { createCategory, getAllCategories, categoryPageDetails };
