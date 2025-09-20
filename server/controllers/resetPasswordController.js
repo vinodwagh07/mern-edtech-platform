@@ -5,7 +5,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 
 //Controller : Sends password reset email with secure token
-const sendResetPasswordEmail = async (req, res) => {
+const requestPasswordReset = async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -137,4 +137,4 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = { sendResetPasswordEmail, resetPassword };
+module.exports = { requestPasswordReset, resetPassword };

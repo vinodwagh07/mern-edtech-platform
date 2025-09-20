@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken");
 const ms = require("ms");
 
 // Controller: Send OTP for user registration
-const sendOtp = async (req, res) => {
+const sentOtp = async (req, res) => {
   try {
     const { email } = req.body;
 
