@@ -1,6 +1,7 @@
 const Profile = require("../models/Profile");
 const User = require("../models/User");
 const Course = require("../models/Course");
+const { uploadToCloudinary } = require("../utils/mediaUploader");
 
 //Updates the authenticated user's profile information.
 const updateProfile = async (req, res) => {
@@ -65,6 +66,34 @@ const updateProfile = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error",
+    });
+  }
+};
+
+const updateProfilePicture = async (req, res) => {
+  try {
+    const profilePicture = req.files.profilePicture;
+    const userId = req.user?.id;
+
+    const profileImage = await uploadToCloudinary(
+      profilePicture,
+      process.env.PROFILE_PICTURES_FOLDER
+    );
+
+    const updatedProfile = await User.findByIdAndUpdate(
+      { _id: userId },
+      { image: profileImage.secure_url },
+      { new: true }
+    );
+    res.send({
+      success: true,
+      message: `Image Updated successfully`,
+      data: updatedProfile,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 };
@@ -153,4 +182,9 @@ const getUserDetails = async (req, res) => {
   }
 };
 
-module.exports = { updateProfile, deleteAccount, getUserDetails };
+module.exports = {
+  updateProfile,
+  updateProfilePicture,
+  deleteAccount,
+  getUserDetails,
+};

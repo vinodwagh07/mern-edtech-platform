@@ -155,7 +155,7 @@ const getCourseDetails = async (req, res) => {
       .populate({
         path: "courseContent",
         populate: {
-          path: "subSection",
+          path: "subSections",
         },
       })
       .populate("category")
@@ -184,4 +184,20 @@ const getCourseDetails = async (req, res) => {
   }
 };
 
-module.exports = { createCourse, getAllCourses, getCourseDetails };
+const getFullCourseDetails = async (req, res) => {};
+
+const editCourse = async (req, res) => {};
+
+const getInstructorCourses = async (req, res) => {};
+
+const deleteCourse = async (req, res) => {};
+
+module.exports = {
+  createCourse,
+  editCourse,
+  getAllCourses,
+  getCourseDetails,
+  getFullCourseDetails,
+  getInstructorCourses,
+  deleteCourse,
+};

@@ -34,7 +34,7 @@ const createSection = async (req, res) => {
       { new: true }
     ).populate({
       path: "courseContent",
-      populate: { path: "subSection" }, // also populate nested subsections
+      populate: { path: "subSections" }, // also populate nested subsections
     });
 
     return res.status(200).json({

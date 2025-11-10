@@ -1,7 +1,15 @@
 const Category = require("../models/Category");
 const Course = require("../models/Course");
+const mongoose = require("mongoose");
+
 
 // Controller : Create a new category in the database
+
+// Helper: Escape regex special characters safely
+function escapeRegex(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 const createCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
@@ -15,8 +23,9 @@ const createCategory = async (req, res) => {
     }
 
     // Prevent duplicate category names
+    const safeName = escapeRegex(name.trim());
     const existingCategory = await Category.findOne({
-      name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+      name: { $regex: new RegExp(`^${safeName}$`, "i") },
     });
 
     if (existingCategory) {

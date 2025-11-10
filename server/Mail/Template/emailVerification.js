@@ -1,5 +1,5 @@
 exports.otpTemplate = (otp) => {
-  const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+  const baseUrl = process.env.BASE_URL || "http://localhost:4000";
   const logoUrl =
     process.env.LOGO_URL ||
     "https://via.placeholder.com/200x50?text=StudyNotion";
