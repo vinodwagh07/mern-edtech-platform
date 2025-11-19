@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import Tab from "../../components/Tab"
+import Tab from "../../components/Tab";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { sendOtp } from "../../features/auth/authAPI";
+import { setSignupData } from "../../features/auth/authSlice";
 
-function SignupForm() {
+const SignupForm = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   // Student or Instructor
-  const [accountType, setAccountType] = useState("student");
+  const [accountType, setAccountType] = useState("Student");
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -34,7 +40,17 @@ function SignupForm() {
       alert("Passwords do not match");
       return;
     }
-    console.log({ firstName, lastName, email, password, accountType });
+
+    // Setting signup data to redux state - To be used after otp verification for registering user
+    const signupData = {
+      ...formData,
+      accountType,
+    };
+    dispatch(setSignupData(signupData));
+    //console.log(signupData)
+    //dispatch send otp to user for otp verification
+    dispatch(sendOtp(formData.email, navigate));
+
     // Reset form
     setFormData({
       firstName: "",
@@ -43,13 +59,13 @@ function SignupForm() {
       password: "",
       confirmPassword: "",
     });
-    setAccountType("student");
+    setAccountType("Student");
   };
 
   // Data for Tab component
   const tabData = [
-    { id: 1, tabName: "Student", type: "student" },
-    { id: 2, tabName: "Instructor", type: "instructor" },
+    { id: 1, tabName: "Student", type: "Student" },
+    { id: 2, tabName: "Instructor", type: "Instructor" },
   ];
 
   return (
@@ -119,10 +135,7 @@ function SignupForm() {
               placeholder="Enter Password"
               className="form-style w-full !pr-10"
             />
-            <span
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-10 cursor-pointer"
-            >
+            <span onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-10 cursor-pointer">
               {showPassword ? (
                 <AiOutlineEyeInvisible fontSize={24} fill="#AFB2BF" />
               ) : (
@@ -157,15 +170,12 @@ function SignupForm() {
           </label>
         </div>
 
-        <button
-          type="submit"
-          className="mt-4 py-2 px-4 bg-yellow-50 text-richblack-900 font-medium rounded"
-        >
+        <button type="submit" className="mt-4 py-2 px-4 bg-yellow-50 text-richblack-900 font-medium rounded">
           Create Account
         </button>
       </form>
     </div>
   );
-}
+};
 
 export default SignupForm;

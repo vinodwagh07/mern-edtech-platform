@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import { Link } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { login } from "../../features/auth/authAPI";
 
-function LoginForm() {
+const LoginForm =() => {
   // Local state for form fields
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -25,15 +29,11 @@ function LoginForm() {
   // Handle form submit
   const handleOnSubmit = (e) => {
     e.preventDefault();
-    // For now just console log the data since we are doing UI only
-    console.log("Form Submitted:", formData);
+    dispatch(login(email, password, navigate));
   };
 
   return (
-    <form
-      onSubmit={handleOnSubmit}
-      className="mt-6 flex w-full flex-col gap-y-4"
-    >
+    <form onSubmit={handleOnSubmit} className="mt-6 flex w-full flex-col gap-y-4">
       {/* Email Input */}
       <label className="w-full">
         <p className="mb-1 text-[0.875rem] leading-[1.375rem] text-richblack-5">
@@ -77,9 +77,7 @@ function LoginForm() {
 
         {/* Forgot Password Link */}
         <Link to="/forgot-password">
-          <p className="mt-1 ml-auto max-w-max text-xs text-blue-100">
-            Forgot Password
-          </p>
+          <p className="mt-1 ml-auto max-w-max text-xs text-blue-100">Forgot Password</p>
         </Link>
       </label>
 
