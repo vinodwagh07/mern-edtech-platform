@@ -4,8 +4,15 @@ import { apiConnector } from "../../services/apiConnector";
 import { authEndpoints } from "../../services/api";
 import { toast } from "react-hot-toast";
 
-const { SENDOTP_API, SIGNUP_API, LOGIN_API, RESETPASSWORDTOKEN_API, RESETPASSWORD_API, CHANGEPASSWORD_API } =
-  authEndpoints;
+const {
+  SENDOTP_API,
+  SIGNUP_API,
+  LOGIN_API,
+  RESETPASSWORDTOKEN_API,
+  RESETPASSWORD_API,
+  CHANGEPASSWORD_API,
+  DELETE_ACCOUNT_API,
+} = authEndpoints;
 
 //after submitting signup form send otp for email verification
 export function sendOtp(email, navigate) {
@@ -63,7 +70,10 @@ export function login(email, password, navigate) {
     const toastId = toast.loading("Loading...");
     dispatch(setLoading(true));
     try {
-      const response = await apiConnector("POST", LOGIN_API, { email, password });
+      const response = await apiConnector("POST", LOGIN_API, {
+        email,
+        password,
+      });
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -72,14 +82,15 @@ export function login(email, password, navigate) {
       toast.success("Login Successful");
       dispatch(setToken(response.data.token));
       dispatch(setUser(response.data.user));
-      localStorage.setItem("token", JSON.stringify(response.data.token))
-      localStorage.setItem("user", JSON.stringify(response.data.user))
+      localStorage.setItem("token", JSON.stringify(response.data.token));
+      localStorage.setItem("user", JSON.stringify(response.data.user));
       navigate("/dashboard/my-profile");
     } catch (error) {
       toast.error(error.response.data.message);
+    } finally {
+      dispatch(setLoading(false));
+      toast.dismiss(toastId);
     }
-    dispatch(setLoading(false));
-    toast.dismiss(toastId);
   };
 }
 
@@ -89,7 +100,9 @@ export function requestPasswordReset(email, setEmailSent) {
     const toastId = toast.loading("Loading...");
     dispatch(setLoading(true));
     try {
-      const response = await apiConnector("POST", RESETPASSWORDTOKEN_API, { email });
+      const response = await apiConnector("POST", RESETPASSWORDTOKEN_API, {
+        email,
+      });
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -110,7 +123,11 @@ export function resetPassword(password, confirmPassword, token, navigate) {
     const toastId = toast.loading("Loading...");
     dispatch(setLoading(true));
     try {
-      const response = await apiConnector("POST", RESETPASSWORD_API, { password, confirmPassword, token });
+      const response = await apiConnector("POST", RESETPASSWORD_API, {
+        password,
+        confirmPassword,
+        token,
+      });
 
       if (!response.data.success) {
         throw new Error(response.data.message);
@@ -126,24 +143,47 @@ export function resetPassword(password, confirmPassword, token, navigate) {
 }
 
 //change password taking oldPassword and newPassword
-export function changePassword(oldPassword, newPassword, navigate) {
+export function changePassword(token, formData) {
   return async (dispatch) => {
     const toastId = toast.loading("Loading...");
     dispatch(setLoading(true));
     try {
-      const response = await apiConnector("POST", CHANGEPASSWORD_API, { oldPassword, newPassword });
+      const response = await apiConnector("POST", CHANGEPASSWORD_API, formData, {
+        Authorization: `Bearer ${token}`,
+      });
 
       if (!response.data.success) {
         throw new Error(response.data.message);
       }
 
       toast.success("Password changes successfully...");
-      navigate("/dashboard/my-profile");
+    } catch (error) {
+      toast.error(error.response.data.message || "Something went wrong");
+      throw error;
+    } finally {
+      toast.dismiss(toastId);
+      dispatch(setLoading(false));
+    }
+  };
+}
+
+export function deleteAccount(token, navigate) {
+  const toastId = toast.loading("Loading...");
+  return async (dispatch) => {
+    try {
+      const response = await apiConnector("DELETE", DELETE_ACCOUNT_API, null, {
+        Authorization: `Bearer ${token}`,
+      });
+
+      if (!response.data.success) {
+        throw new Error(response.data.message);
+      }
+      toast.success("Profile Deleted Successfully");
+      dispatch(logout(navigate));
     } catch (error) {
       toast.error(error.response.data.message);
     }
     toast.dismiss(toastId);
-    dispatch(setLoading(false));
   };
 }
 
