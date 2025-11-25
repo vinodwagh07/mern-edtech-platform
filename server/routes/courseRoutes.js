@@ -78,7 +78,7 @@ router.get(
 router.get("/getAllCourses", getAllCourses);
 router.get("/getCourseDetails", getCourseDetails);
 router.get("/getFullCourseDetails", auth, getFullCourseDetails);
-router.put("/updateCourseProgress", auth, authorizeRole, updateCourseProgress);
+router.put("/updateCourseProgress", auth, authorizeRole("Student"), updateCourseProgress);
 router.delete("/deleteCourse", deleteCourse);
 
 router.post("/createCategory", auth, authorizeRole("Admin"), createCategory);
