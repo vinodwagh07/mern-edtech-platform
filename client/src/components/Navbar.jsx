@@ -1,6 +1,6 @@
 import React from "react";
 import { NavbarLinks } from "../data/Navbar-Link";
-import { Link, matchPath} from "react-router-dom";
+import { Link, matchPath } from "react-router-dom";
 import Logo from "../assets/Logo/Logo-Full-Light.png";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -8,12 +8,7 @@ import { toast } from "react-hot-toast";
 import { ACCOUNT_TYPE } from "../utils/constants";
 import { categories } from "../services/api";
 import { apiConnector } from "../services/apiConnector";
-import {
-  AiOutlineContacts,
-  AiOutlineHome,
-  AiOutlineLogin,
-  AiOutlineShoppingCart,
-} from "react-icons/ai";
+import { AiOutlineContacts, AiOutlineHome, AiOutlineLogin, AiOutlineShoppingCart } from "react-icons/ai";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { SlArrowDown, SlArrowUp } from "react-icons/sl";
 import { useState } from "react";
@@ -25,9 +20,9 @@ import { BiCategory, BiDetail } from "react-icons/bi";
 
 const Navbar = () => {
   // Fetch state from redux store
-  const { token } = useSelector((state) => state.auth);
-  const { user } = useSelector((state) => state.profile);
-  const { totalItems } = useSelector((state) => state.cart);
+  const token = useSelector((state) => state.auth.token);
+  const user = useSelector((state) => state.profile.user);
+  const totalItems = useSelector((state) => state.cart.totalItems);
   const location = useLocation();
   const [catalogCategories, setCatalogCategories] = useState([]);
 
@@ -59,13 +54,7 @@ const Navbar = () => {
       <div className="w-11/12 flex items-center justify-between max-w-maxContent text-white">
         {/* Image */}
         <Link to="/">
-          <img
-            src={Logo}
-            alt="StudyNotion"
-            width={160}
-            height={32}
-            loading="lazy"
-          />
+          <img src={Logo} alt="StudyNotion" width={160} height={32} loading="lazy" />
         </Link>
 
         {/* NavLinks */}
@@ -92,11 +81,7 @@ const Navbar = () => {
                 ) : (
                   <Link to={element?.path}>
                     <p
-                      className={`font-semibold ${
-                        matchRoute(element?.path)
-                          ? "text-yellow-25"
-                          : "text-richblack-25"
-                      }`}
+                      className={`font-semibold ${matchRoute(element?.path) ? "text-yellow-25" : "text-richblack-25"}`}
                     >
                       {element.title}
                     </p>
@@ -146,11 +131,7 @@ const Navbar = () => {
 
       {/* Menubar on small devices */}
       <div className="mr-4 md:hidden">
-        <GiHamburgerMenu
-          onClick={() => setIsMenuModalOpen((prev) => !prev)}
-          className={` fill-richblack-100 `}
-          fontSize={24}
-        />
+        <GiHamburgerMenu className={` fill-richblack-100 `} fontSize={24} />
       </div>
     </div>
   );
