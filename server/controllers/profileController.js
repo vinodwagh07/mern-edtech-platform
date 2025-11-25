@@ -1,6 +1,7 @@
 const Profile = require("../models/Profile");
 const User = require("../models/User");
 const Course = require("../models/Course");
+const CourseProgress = require("../models/CourseProgress");
 const { uploadToCloudinary } = require("../utils/mediaUploader");
 
 //Updates the authenticated user's profile information.
@@ -15,7 +16,7 @@ const updateProfile = async (req, res) => {
       });
     }
 
-    const { dateOfBirth = "", about = "", contactNumber, gender } = req.body;
+    const { firstName = "", lastName = "", dateOfBirth = "", about = "", contactNumber, gender } = req.body;
 
     // Validate required fields
     if (!contactNumber || !gender) {
@@ -43,23 +44,24 @@ const updateProfile = async (req, res) => {
     }
 
     const profileId = user.additionalDetails;
+    
+    await Profile.findByIdAndUpdate(profileId, {
+      gender: gender,
+      dateOfBirth: dateOfBirth,
+      about: about,
+      contactNumber: contactNumber,
+    });
 
-    // Update profile document with new fields
-    const updatedProfile = await Profile.findByIdAndUpdate(
-      profileId,
-      {
-        dateOfBirth,
-        about,
-        contactNumber,
-        gender,
-      },
-      { new: true }
-    );
-
+    const updatedProfileDetails = await User.findByIdAndUpdate(userId, {
+      firstName,
+      lastName,
+    })
+      .populate("additionalDetails")
+      .exec();
     return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
-      data: updatedProfile,
+      data: updatedProfileDetails,
     });
   } catch (error) {
     console.error("error updating profile", error.message);
@@ -75,10 +77,7 @@ const updateProfilePicture = async (req, res) => {
     const profilePicture = req.files.profilePicture;
     const userId = req.user?.id;
 
-    const profileImage = await uploadToCloudinary(
-      profilePicture,
-      process.env.PROFILE_PICTURES_FOLDER
-    );
+    const profileImage = await uploadToCloudinary(profilePicture, process.env.PROFILE_PICTURES_FOLDER);
 
     const updatedProfile = await User.findByIdAndUpdate(
       { _id: userId },
@@ -157,9 +156,7 @@ const getUserDetails = async (req, res) => {
       });
     }
 
-    const userDetails = await User.findById(userId).populate(
-      "additionalDetails"
-    );
+    const userDetails = await User.findById(userId).populate("additionalDetails");
 
     if (!userDetails) {
       return res.status(404).json({
@@ -182,9 +179,67 @@ const getUserDetails = async (req, res) => {
   }
 };
 
+//Fetch all courses of a user is enrolled in along with progress
+const getEnrolledCourses = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    // 1️⃣ Fetch user with enrolled courses
+    const user = await User.findById(userId).populate("courses").lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: `User with ID ${userId} not found`,
+      });
+    }
+
+    //Fetch all course progress for this user
+    const progressData = await CourseProgress.find({ userId }).lean();
+
+    // Map courses to frontend-friendly format
+    // - Uses stored totalLectures and totalDuration for performance
+    // - Calculates progressPercentage based on completed subsections
+    // - Adds 'Completed' status if progress is 100%
+    const enrolledCourses = user.courses.map((course) => {
+      const courseProgress = progressData.find((p) => p.courseId.toString() === course._id.toString());
+      const completedCount = courseProgress?.completedSubSections.length || 0;
+
+      const progressPercentage =
+        course.totalLectures === 0 ? 100 : Math.round((completedCount / course.totalLectures) * 100);
+
+      return {
+        _id: course._id,
+        courseData: course,
+        courseName: course.courseName,
+        courseDescription: course.courseDescription,
+        thumbnail: course.thumbnail,
+        totalDuration: course.totalDuration, // stored in Course
+        totalLectures: course.totalLectures, // stored in Course
+        progressPercentage,
+        status: progressPercentage === 100 ? "Completed" : undefined,
+      };
+    });
+
+    // 4️⃣ Respond with consistent API format
+    return res.status(200).json({
+      success: true,
+      data: enrolledCourses,
+    });
+  } catch (error) {
+    console.error("Error fetching enrolled courses:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching enrolled courses",
+    });
+  }
+};
+
 module.exports = {
   updateProfile,
   updateProfilePicture,
   deleteAccount,
   getUserDetails,
+  getEnrolledCourses,
 };
