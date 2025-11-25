@@ -9,7 +9,13 @@ import Contact from "../pages/Contact/Contact";
 import VerifyEmail from "../pages/Auth/VerifyEmail";
 import ForgotPassword from "../pages/Auth/ForgotPassword";
 import ResetPassword from "../pages/Auth/ResetPassword";
+import Dashboard from "../pages/Dashboard/Dashboard";
+import MyProfile from "../pages/Dashboard/MyProfile";
+import EnrolledCourses from "../pages/Dashboard/EnrolledCourses";
+import Settings from "../pages/Dashboard/Settings/index"
+import Error from "../pages/Error";
 import OpenRoute from "./OpenRoute";
+import ProtectedRoute from "./ProtectedRoutes";
 
 const AppRoutes = () => (
   <Routes>
@@ -41,6 +47,21 @@ const AppRoutes = () => (
     <Route path="forgot-password" element={<ForgotPassword />} />
     <Route path="reset-password/:id" element={<ResetPassword />} />
     <Route path="verify-email" element={<VerifyEmail />} />
+
+    <Route
+      element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      }
+    >
+      <Route path="dashboard/my-profile" element={<MyProfile />} />
+      <Route path="dashboard/enrolled-courses" element={<EnrolledCourses />} />
+      <Route path="dashboard/settings" element={<Settings />} />
+    </Route>
+
+    {/* Page not found route */}
+    <Route path="*" element={<Error />} />
   </Routes>
 );
 
