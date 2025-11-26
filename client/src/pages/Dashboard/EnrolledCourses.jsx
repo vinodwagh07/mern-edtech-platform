@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import ProgressBar from "@ramonak/react-progress-bar";
 import Spinner from "../../components/Spinner";
+import Tab from "../../components/Tab";
 
 import { getUserEnrolledCourses } from "../../features/profile/profileAPI";
 import { convertSecondsToDuration } from "../../utils/durationFormatter";
@@ -14,8 +15,15 @@ export default function EnrolledCourses() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedTab, setSelectedTab] = useState("all");
 
   const FALLBACK_THUMB = "https://placehold.co/300x200/1e1e2f/ffffff?text=Course+Thumbnail";
+
+  const tabData = [
+    { id: 1, type: "all", tabName: "All" },
+    { id: 2, type: "pending", tabName: "Pending" },
+    { id: 3, type: "completed", tabName: "Completed" },
+  ];
 
   //Fetch courses
   const fetchCourses = useCallback(async () => {
@@ -40,12 +48,23 @@ export default function EnrolledCourses() {
       courses.map((c) => ({
         ...c,
         duration: convertSecondsToDuration(c.totalDuration),
-        shortDesc: c.courseDescription 
+        shortDesc: c.courseDescription
           ? c.courseDescription.split("\n")[0].slice(0, 50) + (c.courseDescription.length > 50 ? "..." : "")
           : "No description available",
       })),
     [courses]
   );
+
+  //Filter courses on selected tab  [ All , Pending , Completed]
+  const filteredCourses = useMemo(() => {
+    if (selectedTab === "completed") {
+      return formattedCourses.filter((c) => c.progressPercentage === 100);
+    }
+    if (selectedTab === "pending") {
+      return formattedCourses.filter((c) => c.progressPercentage < 100);
+    }
+    return formattedCourses; // all
+  }, [formattedCourses, selectedTab]);
 
   if (loading) {
     return (
@@ -74,6 +93,8 @@ export default function EnrolledCourses() {
       <div className="text-3xl text-richblack-50  lg:text-left text-center">Enrolled Course</div>
 
       <div className="overflow-x-auto">
+        <Tab tabData={tabData} field={selectedTab} setField={setSelectedTab} />
+
         <div className="my-8 text-richblack-5 w-[650px] md:w-full">
           {/* Table Header */}
           <div className="flex rounded-t-lg bg-richblack-700 ">
@@ -83,7 +104,7 @@ export default function EnrolledCourses() {
           </div>
 
           {/* Course List */}
-          {formattedCourses.map((course, idx, arr) => (
+          {filteredCourses.map((course, idx, arr) => (
             <div
               key={course._id}
               className={`flex items-center border border-richblack-700 ${
@@ -117,14 +138,29 @@ export default function EnrolledCourses() {
 
               {/* Progress */}
               <div className="flex w-1/5 flex-col gap-2 px-2 py-3 tracking-wider">
-                <p>Progress - {course.progressPercentage || 0}%</p>
-                <ProgressBar
-                  completed={course.progressPercentage || 0}
-                  height="8px"
-                  isLabelVisible={false}
-                  bgColor="#3AB4F2"
-                  baseBgColor="#2A2F36"
-                />
+                {course.progressPercentage === 100 ? (
+                  <>
+                    <p className="text-green-400 font-semibold">Completed</p>
+                    <ProgressBar
+                      completed={100}
+                      height="8px"
+                      isLabelVisible={false}
+                      bgColor="#22c55e" // green
+                      baseBgColor="#1e293b"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <p>Progress - {course.progressPercentage || 0}%</p>
+                    <ProgressBar
+                      completed={course.progressPercentage || 0}
+                      height="8px"
+                      isLabelVisible={false}
+                      bgColor="#3AB4F2" // default blue
+                      baseBgColor="#2A2F36"
+                    />
+                  </>
+                )}
               </div>
             </div>
           ))}
