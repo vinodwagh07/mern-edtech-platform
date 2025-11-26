@@ -5,7 +5,8 @@ const { generateOTP } = require("../utils/otpGenerator");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const ms = require("ms");
-const { passwordUpdate } = require("../Mail/Template/passwordUpdate");
+const { passwordUpdated } = require("../Mail/Template/passwordUpdate");
+const mailSender = require("../utils/mailSender");
 
 // Controller: Send OTP for user registration
 const sendOtp = async (req, res) => {
@@ -155,7 +156,7 @@ const login = async (req, res) => {
     }
 
     //Check if user exists in DB
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).populate("additionalDetails");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -185,6 +186,8 @@ const login = async (req, res) => {
     const options = {
       expires: new Date(Date.now() + ms(process.env.COOKIE_EXPIRY)),
       httpOnly: true, // prevents XSS — cookie can’t be accessed via JS
+      secure: false, // true in production with HTTPS
+      sameSite: "lax",
     };
 
     //Send response with cookie + token
@@ -212,6 +215,20 @@ const changePassword = async (req, res) => {
     // Get old password, new password, and confirm new password from req.body
     const { oldPassword, newPassword } = req.body;
 
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Both old and new passwords are required",
+      });
+    }
+
+    if (oldPassword === newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password cannot be same as old password",
+      });
+    }
+
     // Validate old password
     const isPasswordMatch = await bcrypt.compare(
       oldPassword,
@@ -221,7 +238,7 @@ const changePassword = async (req, res) => {
       // If old password does not match, return a 401 (Unauthorized) error
       return res
         .status(401)
-        .json({ success: false, message: "The password is incorrect" });
+        .json({ success: false, message: "Invalid credentials" });
     }
 
     // Update password
@@ -232,26 +249,17 @@ const changePassword = async (req, res) => {
       { new: true }
     );
 
-    // Send notification email
-    try {
-      const emailResponse = await mailSender(
+    //Send email asynchronously (no await)
+    mailSender(
+      updatedUserDetails.email,
+      "Password for your account has been updated",
+      passwordUpdated(
         updatedUserDetails.email,
-        "Password for your account has been updated",
-        passwordUpdate(
-          updatedUserDetails.email,
-          `Password updated successfully for ${updatedUserDetails.firstName} ${updatedUserDetails.lastName}`
-        )
-      );
-      console.log("Email sent successfully:", emailResponse.response);
-    } catch (error) {
-      // If there's an error sending the email, log the error and return a 500 (Internal Server Error) error
-      console.error("Error occurred while sending email:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Error occurred while sending email",
-        error: error.message,
-      });
-    }
+        `Password updated successfully for ${updatedUserDetails.firstName} ${updatedUserDetails.lastName}`
+      )
+    ).catch((err) =>
+      console.error("Failed to send password update email:", err.message)
+    );
 
     // Return success response
     return res

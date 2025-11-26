@@ -12,10 +12,12 @@ const {
   resetPassword,
 } = require("../controllers/resetPasswordController");
 
+const { auth } = require("../middlewares/authMiddleware");
+
 router.post("/signup", signup);
 router.post("/login", login);
 router.post("/send-otp", sendOtp);
-router.post("/change-password", changePassword);
+router.post("/change-password",auth, changePassword);
 router.post("/request-password-reset", requestPasswordReset);
 router.post("/reset-password", resetPassword);
 

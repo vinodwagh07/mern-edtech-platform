@@ -23,7 +23,7 @@ const createSection = async (req, res) => {
     }
 
     // Create the new section
-    const newSection = await Section.create({ sectionName });
+    const newSection = await Section.create({ sectionName, courseId });
 
     // Add the new section to the course and populate subsections
     const updatedCourse = await Course.findByIdAndUpdate(

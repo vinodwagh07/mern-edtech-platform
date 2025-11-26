@@ -1,10 +1,9 @@
 const { instance } = require("../config/razorpay");
 const Course = require("../models/Course");
+const CourseProgress = require("../models/CourseProgress")
 const User = require("../models/User");
 const mailSender = require("../utils/mailSender");
-const {
-  courseEnrollmentEmail,
-} = require("../Mail/Template/courseEnrollmentEmail");
+const { courseEnrollmentEmail } = require("../Mail/Template/courseEnrollmentEmail");
 const crypto = require("crypto");
 
 const createOrder = async (req, res) => {
@@ -82,10 +81,7 @@ const verifyPayment = async (req, res) => {
     const body = JSON.stringify(req.body); //contains orderid , paymentid , etc
 
     //Generate expected signature using HMAC SHA256
-    const expected_signature = crypto
-      .createHmac("sha256", webhookSecret)
-      .update(body)
-      .digest("hex");
+    const expected_signature = crypto.createHmac("sha256", webhookSecret).update(body).digest("hex");
 
     //Verify signature to ensure webhook is authentic
     if (signature !== expected_signature) {
@@ -102,9 +98,7 @@ const verifyPayment = async (req, res) => {
 
     //Ignore payments not yet captured
     if (status !== "captured") {
-      return res
-        .status(200)
-        .json({ success: true, message: "Payment not captured" });
+      return res.status(200).json({ success: true, message: "Payment not captured" });
     }
 
     //Idempotency check: avoid duplicate enrollment
@@ -112,9 +106,7 @@ const verifyPayment = async (req, res) => {
     const user = await User.findById(userId);
     if (user.courses.includes(courseId)) {
       console.log(`⚡ User already enrolled in course ${courseId}`);
-      return res
-        .status(200)
-        .json({ success: true, message: "User already enrolled" });
+      return res.status(200).json({ success: true, message: "User already enrolled" });
     }
 
     //Enroll user safely using $addToSet (idempotent)
@@ -125,9 +117,20 @@ const verifyPayment = async (req, res) => {
       },
       { new: true }
     );
+
+    //Update course enrollement array - array of enrolled students
     await Course.findByIdAndUpdate(courseId, {
       $addToSet: { studentsEnrolled: userId },
     });
+
+    // Create course progress record
+    const courseProgress = await CourseProgress.findOne({ courseId, userId });
+    if (!courseProgress) {
+      await CourseProgress.create({
+        courseId,
+        userId,
+      });
+    }
 
     //Send confirmation email
     try {

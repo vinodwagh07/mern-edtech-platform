@@ -1,14 +1,16 @@
 const Section = require("../models/Section");
 const SubSection = require("../models/SubSection");
+const Course = require("../models/Course");
+const { updateCourseTotals } = require("../utils/courseUtils");
 const { uploadToCloudinary } = require("../utils/mediaUploader");
 
 //Create a new SubSection and add its reference(ObjectId) to the Section
 const createSubSection = async (req, res) => {
   try {
-    const { sectionId, title, description, timeDuration } = req.body;
+    const { sectionId, title, description } = req.body;
     const videoFile = req.files?.videoFile;
 
-    if (!title || !description || !timeDuration || !videoFile || !sectionId) {
+    if (!title || !description || !videoFile || !sectionId) {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
@@ -31,12 +33,16 @@ const createSubSection = async (req, res) => {
       { resource_type: "video" }
     );
 
+    // cloudinary provide duration in seconds
+    const videoDuration = uploadedVideo.duration || 0; // duration in seconds
+
     // Create sub-section
     const newSubSection = await SubSection.create({
       title,
-      timeDuration,
+      timeDuration: videoDuration,
       description,
       videoUrl: uploadedVideo.secure_url,
+      sectionId: section._id,
     });
 
     //Update section
@@ -47,6 +53,11 @@ const createSubSection = async (req, res) => {
       },
       { new: true }
     ).populate("subSections");
+
+    // Recalculate course totals via parent section
+    if (section.courseId) {
+      await updateCourseTotals(section.courseId);
+    }
 
     return res.status(201).json({
       success: true,
@@ -65,7 +76,7 @@ const createSubSection = async (req, res) => {
 //Update an existing SubSection
 const updateSubSection = async (req, res) => {
   try {
-    const { subSectionId, title, description, timeDuration } = req.body;
+    const { subSectionId, title, description } = req.body;
     const videoFile = req.files?.videoFile;
 
     if (!subSectionId) {
@@ -88,7 +99,6 @@ const updateSubSection = async (req, res) => {
 
     if (title) updateData.title = title;
     if (description) updateData.description = description;
-    if (timeDuration) updateData.timeDuration = timeDuration;
 
     // if video given - Upload video to cloudinary
     if (videoFile) {
@@ -98,6 +108,7 @@ const updateSubSection = async (req, res) => {
         { resource_type: "video" }
       );
       updateData.videoUrl = uploadedVideo.secure_url;
+      updateData.timeDuration = uploadedVideo.duration;
     }
 
     // Update SubSection and return updated document
@@ -106,6 +117,12 @@ const updateSubSection = async (req, res) => {
       updateData,
       { new: true }
     );
+
+    // Update course totals via parent section
+    const parentSection = await Section.findById(subSection.sectionId);
+    if (parentSection?.courseId) {
+      await updateCourseTotals(parentSection.courseId);
+    }
 
     return res.status(200).json({
       success: true,
@@ -154,6 +171,12 @@ const deleteSubSection = async (req, res) => {
 
     // Delete the SubSection
     await SubSection.findByIdAndDelete(subSectionId);
+
+    // Update course totals via parent section
+    const parentSection = await Section.findById(sectionId);
+    if (parentSection?.courseId) {
+      await updateCourseTotals(parentSection.courseId);
+    }
 
     return res.status(200).json({
       success: true,
