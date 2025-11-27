@@ -176,7 +176,7 @@ const login = async (req, res) => {
       accountType: user.accountType,
     };
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRY || "2h",
+      expiresIn: process.env.JWT_EXPIRY || "3d",
     });
 
     user.token = token;
