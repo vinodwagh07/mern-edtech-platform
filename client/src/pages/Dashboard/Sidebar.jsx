@@ -10,7 +10,6 @@ import ConfirmationModal from "../../components/ConfirmationModal";
 import { useState } from "react";
 
 const Sidebar = () => {
-  const token = useSelector((state) => state.auth.token);
   const user = useSelector((state) => state.profile.user);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
